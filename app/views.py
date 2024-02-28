@@ -1,10 +1,10 @@
 from app import app
 from flask import render_template, request, redirect, url_for, flash
+from app import mail
+from flask_mail import Message
 
+from app.forms import ContactForm
 
-###
-# Routing for your application.
-###
 
 @app.route('/')
 def home():
@@ -18,12 +18,24 @@ def about():
     return render_template('about.html', name="Mary Jane")
 
 
-###
-# The functions below should be applicable to all Flask apps.
-###
+@app.route('/contact', methods=['GET', 'POST'])
+def contact():
+    form = ContactForm()
+    if form.validate_on_submit():
+        name = form.name.data
+        email = form.email.data
+        subject = form.subject.data
+        message = form.message.data
+        msg = Message(subject,
+                      sender=(name, email),
+                      recipients=[email])
+        msg.body = f"From: {name}\nEmail: {email}\n\n{message}"
+        mail.send(msg)
+        flash('Your message has been sent. Thank you!', 'success')
+        return redirect(url_for('home'))
+    return render_template('contact.html', form=form)
 
 
-# Flash errors from the form if validation fails
 def flash_errors(form):
     for field, errors in form.errors.items():
         for error in errors:
